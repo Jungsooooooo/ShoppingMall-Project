@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	<mapper namespace="com.shopping.member.mapper.memberMapper">
+  
+ 	<select id="selectMember" resultType="com.shopping.member.dto.MemberDTO">
+		SELECT * FROM member
+	 </select>
+	
+ 	<select id="view" parameterType="String" resultType="com.shopping.member.dto.MemberDTO">
+		SELECT * FROM member WHERE userId = #{userId}
+	</select>
+  
+  <!-- 로그인 -->
+	<select id="login" parameterType="com.shopping.member.dto.MemberDTO" resultType="com.shopping.member.dto.MemberDTO">
+		SELECT	userId, userPw, userName
+		FROM	member
+		WHERE	userId	= #{userId}
+		AND		userPw	= #{userPw}
+		</select>
+  
+  <!-- 회원 아이디 중복 검사 -->
+		<select id="idCheck" resultType="int">
+			SELECT	count(*)
+			FROM	member
+			WHERE	userId = #{userId}
+		</select>
+
+	<!-- 회원 가입 -->
+		<insert id="insert" parameterType="com.shopping.member.dto.MemberDTO">
+			INSERT INTO member
+					(userId, userPw, userName, userPhone, userEmail, zipcode, userAddr1, userAddr2, userBirth, regDate)
+			VALUES	(#{userId}, #{userPw}, #{userName}, #{userPhone}, #{userEmail}, #{zipcode}, #{userAddr1}, #{userAddr2}, #{userBirth}, NOW())
+		</insert>
+	<!-- 회원가입 (Ajax) -->
+		<insert id="register" parameterType="com.shopping.member.dto.MemberDTO">
+			INSERT 	INTO member
+					((userId, userPw, userName, userPhone, userEmail, zipcode, userAddr1, userAddr2, userBirth, regDate)
+			VALUES	(#{userId}, #{userPw}, #{userName}, #{userPhone}, #{userEmail}, #{zipcode}, #{userAddr1}, #{userAddr2}, #{userBirth}, NOW())
+		</insert>
+		
+		
+	<!-- 
+	해당하는 회원id의 비밀번호, 이름, 번화번호, 주소를 변경한다. -->
+	<update id="update"
+		parameterType="com.shopping.member.dto.MemberDTO">
+		UPDATE member
+		SET userPw = #{userPw},
+		userName = #{userName},
+		userPhone = #{userPhone},
+		zipcode = #{zipcode},
+		userAddr1 = #{userAddr1},
+		userAddr2 = #{userAddr2}
+		WHERE userId = #{userId}
+	</update>
+
+	<!-- 회원 아이디에 해당하는 정보를 삭제한다. -->
+	<delete id="delete" parameterType="String">
+		DELETE FROM member
+		WHERE userId = #{userId}
+	</delete>
+	
+	<!-- 아이디 찾기 -->
+	<select id="findidform" parameterType="String" resultType="String">
+		select userId from member where userEmail = #{userEmail}
+	</select>
+	
+	<!-- 비밀번호 찾기 -->
+	<select id="memberfindpwform" resultType="String">
+		select userPw from member where userId=#{userId} and userEmail = #{userEmail}
+	</select>
+	
+  <!-- 회원 이메일 중복 검사 -->
+	<select id="eCheck" resultType="int">
+		SELECT	count(*)
+		FROM	member
+		WHERE	userEmail = #{userEmail}
+	</select>
+	
+	
+  </mapper>

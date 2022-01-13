@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	
+<mapper namespace="com.shopping.mappers.MainMapper">
+
+	<!-- 상품 유형에 해당하는 자료를 추출한다. -->
+	<select id="productDetail" parameterType="String" resultType="com.shopping.manager.dto.ManagerDTO">
+		SELECT	*
+		FROM	product p
+		left join    buy on p.productCode =buy.productCode
+		WHERE	productClass		= #{productClass}
+		group by p.productCode
+		ORDER BY buy_productCount desc
+	</select>
+		<select id="productDetailBest" parameterType="String" resultType="com.shopping.manager.dto.ManagerDTO">
+		select *
+		from buy
+		group by productCode
+		order by sum(buy_productCount) desc limit 10
+	</select>
+		<select id="productDetailregdate" parameterType="String" resultType="com.shopping.manager.dto.ManagerDTO">
+		SELECT	*
+		FROM	product
+		WHERE	productClass		= #{productClass}
+		ORDER BY reg_date desc
+	</select>
+	
+	<select id="productDetaillowprice" parameterType="String" resultType="com.shopping.manager.dto.ManagerDTO">
+		SELECT	*
+		FROM	product
+		WHERE	productClass		= #{productClass}
+		ORDER BY productPrice asc
+	</select>
+	<select id="productDetailhighprice" parameterType="String" resultType="com.shopping.manager.dto.ManagerDTO">
+		SELECT	*
+		FROM	product
+		WHERE	productClass		= #{productClass}
+		ORDER BY productPrice desc
+	</select>
+	
+	
+	<!-- 바로 구매하기 했을때 로그인한 사용자 정보를 가져온다 -->
+	<select id="view" parameterType="String" resultType="com.shopping.member.dto.MemberDTO">
+		SELECT * FROM member WHERE userId = #{userId}
+	</select>
+	
+	<!-- 바로 구매하기 했을때 결제 방법을 가져온다 -->
+   	<select id="selectPaymentMethod" resultType="com.shopping.main.dto.PaymentMethodDTO">
+    	SELECT * FROM payment
+    </select>
+
+    <!-- 무통장 선택 했을때 선택란 -->
+   	<select id="selectBank" resultType="com.shopping.main.dto.BankDTO">
+    	SELECT * FROM bank
+    </select>
+    
+	<!-- 바로 구매하기 했을때 상품정보를 입력한다 -->
+    <insert id="buy" parameterType="com.shopping.main.dto.BuyDTO">
+		INSERT INTO buy	(	buyNum,userId,		userName, 		productCode, 		productName, 		productPrice, 		discount_rate,		buy_productCount, 		productImage, 	reg_date, 		payment_method, 			deliveryName, 		deliveryTel,		deliveryAddress1,		deliveryAddress2,	sum,		shippingFee,			finalSum 	)
+		values 				( #{buyNum},	#{userId}, 	#{userName},	#{productCode}, 	#{productName}, 	#{productPrice},		#{discount_rate},	#{buy_productCount},		#{productImage}, now(),	#{payment_method},		#{deliveryName},	#{deliveryTel}, 	#{deliveryAddress1}, 	#{deliveryAddress2},		#{sum},	#{shippingFee},		#{finalSum}	)
+	</insert>
+	
+	<!--  구매완료 목록 -->
+	<select id="buyList" resultType="com.shopping.main.dto.BuyDTO">
+   		<!-- DAO에서 listCart라는 태그로 인해 실행되고 결과타입은 DTO타입으로 한다. (다른계층으로 보내기 위해서) -->
+       select buyNum, b.userId, b.userName, b.productCode, b.productName, b.productPrice, b.discount_rate, b.buy_productCount, b.productImage, b.reg_date, b.payment_method, b.deliveryName, b.deliveryTel, b.deliveryAddress1, b.deliveryAddress2, b.shipping, b.sum,	b.shippingFee,	b.finalSum
+       <!-- 장바구니의 번호, 상품 번호, 회원번호, 회원이름, 상품이름, 상품의양, 상품1개의 가격, 상품의 전체가격을 검색한다.-->
+
+       from member m, buy b
+       <!-- 회원테이블과, 장바구니 테이블과, 상품테이블로 부터 -->
+       
+       where b.userId = m.userId and m.userId=#{userId} order by b.reg_date ASC
+       <!--회원테이블의 회원id와 장바구니테이블의 회원id가 같고, 장바구니의 상품id와 상품테이블의 상품id가 같고, 장바구니테이블의 회원id가  장바구니에 저장되있는 회원id와 같을때-->
+       <!-- 장바구니에 관한 정보를 담은 sql문이다. -->         
+   	</select>
+   	
+   	<!-- 구매 상품 카운트  -->
+   	<select id="buyCount" resultType="int">
+   		select count(*)
+   		from buy
+   		where userId=#{userId}		        
+   	</select> 
+   	
+   	<update id="updateBuy">
+		UPDATE buy
+		SET buyNum = #{buyNum}
+		WHERE userId= #{userId}		
+	</update>
+	
+	<select id="sumBuyMoney" resultType="int">
+		SELECT IFNULL(SUM(p.productPrice*(100-p.discount_rate)/100 * buy_productCount), 0) money
+		FROM buy b, product p
+		WHERE b.productCode = p.productCode AND b.userId = #{userId}
+	</select>
+
+	
+	<!-- 상품 유형 목록에서 상품이름을 클릭하면 정보 추출 -->
+	<select id="listCart3" parameterType="String" resultType="com.shopping.manager.dto.ManagerDTO">
+	SELECT	*
+	FROM		product
+	WHERE	productName		= #{productName}
+	</select>
+	
+	<!-- 장바구니 담기 -->
+	<insert id="addCart" parameterType="com.shopping.main.dto.CartDTO">
+		INSERT INTO cart 	(userId, 	productCode, 	productName, 	productPrice, 		discount_rate, 	buy_productCount, 	productImage)
+		values 				( #{userId}, #{productCode}, #{productName}, #{productPrice}, 	#{discount_rate}, #{buy_productCount}, #{productImage} )
+	</insert>
+
+	<!--  장바구니 목록 -->
+    <select id="listCart" resultType="com.shopping.main.dto.CartDTO">
+   		<!-- DAO에서 listCart라는 태그로 인해 실행되고 결과타입은 DTO타입으로 한다. (다른계층으로 보내기 위해서) -->
+       select cartNum, p.productCode, c.userId, m.userName, p.productName, buy_productCount, p.discount_rate , p.productPrice,p.productImage
+       <!-- 장바구니의 번호, 상품 번호, 회원번호, 회원이름, 상품이름, 상품의양, 상품1개의 가격, 상품의 전체가격을 검색한다.-->
+
+       from member m, cart c, product p
+       <!-- 회원테이블과, 장바구니 테이블과, 상품테이블로 부터 -->
+       
+       where m.userId=c.userId and c.productCode=p.productCode and c.userId=#{userId} order by cartNum
+       <!--회원테이블의 회원id와 장바구니테이블의 회원id가 같고, 장바구니의 상품id와 상품테이블의 상품id가 같고, 장바구니테이블의 회원id가  장바구니에 저장되있는 회원id와 같을때-->
+       <!-- 장바구니에 관한 정보를 담은 sql문이다. -->         
+   	</select>
+   
+   	<select id="listCart2" parameterType="HashMap" resultType="com.shopping.main.dto.CartDTO">
+   		<!-- DAO에서 listCart라는 태그로 인해 실행되고 결과타입은 DTO타입으로 한다. (다른계층으로 보내기 위해서) -->
+       	select cartNum, p.productCode, c.userId, m.userName, p.productName, buy_productCount, p.discount_rate , p.productPrice,p.productImage
+       	<!-- 장바구니의 번호, 상품 번호, 회원번호, 회원이름, 상품이름, 상품의양, 상품1개의 가격, 상품의 전체가격을 검색한다.-->
+     
+       	from member m, cart c, product p
+       	<!-- 회원테이블과, 장바구니 테이블과, 상품테이블로 부터 -->
+       
+       	where m.userId=c.userId and c.productCode=p.productCode and p.productName=#{productName} and c.userId=#{userId} order by cartNum
+       	<!--회원테이블의 회원id와 장바구니테이블의 회원id가 같고, 장바구니의 상품id와 상품테이블의 상품id가 같고, 장바구니테이블의 회원id가  장바구니에 저장되있는 회원id와 같을때-->
+       	<!-- 장바구니에 관한 정보를 담은 sql문이다. -->         
+    </select>
+    <select id="listProductCount" resultType="com.shopping.manager.dto.ManagerDTO">
+        select p.productCount
+        from member m, cart c, product p
+        where m.userId=c.userId and c.productCode=p.productCode and c.userId=#{userId}        
+    </select>
+    
+    <!-- 장바구니 개별 상품 삭제 -->
+    <delete id="delete" parameterType="int">
+        delete from cart where cartNum=#{cartNum}
+    </delete>
+    
+    <!-- 장바구니 개별 상품 삭제 -->
+    <delete id="selectdelete" parameterType="String">
+        delete from cart where cartNum=#{cartNum}
+    </delete>
+    
+    <!-- 장바구니 비우기 -->
+    <delete id="deleteAll" parameterType="String">
+        delete from cart where userId=#{userId}
+        <!-- 장바구니테이블로부터 회원의 아이디와 삭제하고자하는 회원의 아이디가 같으면 장바구니에 있는 자료를 전부다 삭제 -->
+    </delete>
+    
+    <!-- 3. 장바구니 전체 금액 -->
+	<select id="sumMoney" resultType="int">
+		SELECT IFNULL(SUM(p.productPrice*(100-p.discount_rate)/100 * buy_productCount), 0) money
+		FROM cart c, product p
+		WHERE c.productCode = p.productCode AND c.userId = #{userId}
+	</select>
+	
+    <!-- 6. 장바구니에 동일한 상품 레코드 확인 -->
+	<select id="countCart" resultType="int">
+		SELECT COUNT(*)
+		FROM cart
+		WHERE userId= #{userId}
+		AND productCode = #{productCode}
+	</select>
+	
+    <!-- 7. 장바구니에 동일한 상품이 존재하면 수정 -->
+	<update id="updateCart">
+		UPDATE cart
+		SET buy_productCount = buy_productCount + #{buy_productCount}
+		WHERE userId= #{userId}
+		AND productCode = #{productCode}
+	</update>
+	
+	<update id="modifyCart">
+		UPDATE cart
+		SET buy_productCount = #{buy_productCount}
+		WHERE userId= #{userId}
+		AND cartNum = #{cartNum}
+    </update>
+    
+   	<select resultType="Integer" id="onePrice">
+		select p.productPrice*(100-p.discount_rate)/100 
+        from member m, cart c, product p   
+        where 	c.productCode=p.productCode
+        AND 	c.productCode = #{productCode}
+	</select>
+	
+	<!-- FAQ 종류 목록 보기 -->
+    <select id="selectFaqType" resultType="com.shopping.manager.dto.FaqTypeDTO" >
+    	SELECT * FROM FaqType
+    </select>
+    
+    <!-- FAQ 목록 보기 -->
+    <select id="selectFaq" resultType="com.shopping.manager.dto.FaqDTO" >
+    	SELECT * FROM Faq
+    </select>
+    
+    <!-- FaqClass에 맞는 유형 보기 -->
+    <select id="selectFaqClass" resultType="com.shopping.manager.dto.FaqDTO" >
+		SELECT * 
+		FROM Faq
+		WHERE FaqClass   = #{faqClass}
+    </select>
+    
+     <!-- faq 검색조건 -->
+   	<sql id="faqsearch">
+      	<if test="searchType != null">
+	         <if test="searchType == 'title'.toString()">AND title LIKE CONCAT('%',#{keyword},'%')</if>
+	         <if test="searchType == 'content'.toString()">AND content LIKE CONCAT('%',#{keyword},'%')</if>
+      	</if>
+   	</sql>
+   	
+    <!-- Faq 수 구하기 (Paging 처리) + 검색조건 -->
+   	<select id="faqListTotalCount" parameterType="com.shopping.manager.dto.SearchCriteria" resultType="Integer">
+    	<![CDATA[
+        	SELECT   count(*) FROM faq
+        	WHERE   1=1
+    	]]>
+      	<include refid="faqsearch"/>
+   	</select>
+   
+   <!-- Faq 목록 보기 (Paging 처리) + 검색조건 -->
+   <select id="faqListPaging" parameterType="com.shopping.manager.dto.SearchCriteria" resultType="com.shopping.manager.dto.FaqDTO">
+    	<![CDATA[
+        	SELECT   *  FROM   faq 
+        	WHERE   1=1
+    	]]>
+      	<include refid="faqsearch"/>
+    	<![CDATA[
+        	ORDER BY bno ASC
+        	LIMIT   #{pageStart}, #{perPageNum}
+    	]]>
+   	</select>
+    
+    <!-- 장바구니 상품 찾기 -->
+   	<select id="showCarts" resultType="com.shopping.main.dto.CartDTO">
+      	SELECT *
+      	FROM cart
+      	WHERE userId = #{userId}
+   	</select>
+   	
+   	<!-- 장바구니 선택 상품 찾기 -->
+   	<select id="showSelectCarts" resultType="com.shopping.main.dto.CartDTO">
+      	SELECT *
+      	FROM cart
+      	WHERE cartNum=#{cartNum}
+   	</select>
+   	
+   	<!-- 댓글 쓰기 위해 구매자 확인 -->
+	<select id="checkBuy" resultType="int">
+      	SELECT SUM(buy_productCount)
+      	FROM buy
+      	WHERE productName=#{productName}
+      	AND userId=#{userId}
+      	AND shipping="배송완료"
+   	</select>
+   	
+   	<!-- 댓글의 개수를 구한다. -->
+	<select id="checkComment" resultType="int">
+		SELECT	COUNT(*)
+		FROM COMMENT
+		WHERE productCode=#{productCode}
+      	AND writer=#{userId}
+	</select>
+	
+   	<!-- 서치한 후에 뿌려주기 -->
+   	<select id="searchproducts" resultType="com.shopping.manager.dto.ManagerDTO">
+		SELECT *
+		FROM product
+		WHERE 1=1
+		AND productName LIKE CONCAT('%',#{keyword},'%')
+		ORDER BY productCode
+   	</select>
+
+	
+</mapper>	

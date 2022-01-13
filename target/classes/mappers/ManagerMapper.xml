@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	
+<mapper namespace="com.shopping.mappers.ManagerMapper">
+	
+	<insert id="insert" parameterType="com.shopping.manager.dto.ManagerDTO" useGeneratedKeys="true" keyProperty="productCode">
+		INSERT INTO product	(productCode, productClass, 		productName, 	productPrice, 		productCount, 		productImage, 			productContent,		discount_rate 	)	
+		VALUES 				(#{productCode}, #{productClass},	#{productName},	#{productPrice},	#{productCount},	#{productImage},		#{productContent},	#{discount_rate}	)
+	</insert>
+	
+	<!-- 파일 등록 -->
+	<insert id="fileInsert" parameterType="com.shopping.manager.dto.FileDTO" useGeneratedKeys="true" keyProperty="fno">
+		INSERT	INTO	FILES
+				(fno, productCode,	FILENAME,		FILEORINAME,	FILEURL)
+		VALUES	(#{fno}, #{productCode},	#{fileName},	#{fileOriName},	#{fileUrl})
+	</insert>
+	
+	<!-- 상품 목록 보기 -->
+   	<select id="selectProductType" resultType="com.shopping.manager.dto.ProductTypeDTO">
+    	SELECT * FROM ProductType
+    </select>
+    
+    <!-- 상품 목록 보기 -->
+   	<select id="selectProduct" resultType="com.shopping.manager.dto.ManagerDTO">
+    	<![CDATA[
+    	SELECT * 
+    	FROM Product 
+    	order by productCode desc
+    	]]>
+    </select>
+    
+    <!-- 상품 목록 보기 -->
+   	<select id="selectProductnew" resultType="com.shopping.manager.dto.ManagerDTO">
+    	<![CDATA[
+    	SELECT * 
+    	FROM Product 
+    	WHERE reg_date 
+    	BETWEEN DATE_ADD(NOW(),INTERVAL -1 WEEK) AND NOW();
+    	]]>
+    </select>
+    
+    <!-- 회원 검색조건 -->
+	<sql id="membersearch">
+		<if test="searchType != null">
+			<if test="searchType == 'id'.toString()">AND userId LIKE CONCAT('%',#{keyword},'%')</if>
+			<if test="searchType == 'name'.toString()">AND userName LIKE CONCAT('%',#{keyword},'%')</if>
+			<if test="searchType == 'birth'.toString()">AND userBirth  LIKE CONCAT('%',#{keyword},'%')</if>
+		</if>
+	</sql>
+	
+    <!-- 전체 회원 수 구하기 (Paging 처리) + 검색조건 -->
+	<select id="memberListTotalCount" parameterType="com.shopping.manager.dto.SearchCriteria" resultType="Integer">
+    <![CDATA[
+        SELECT	count(*) FROM	member
+        WHERE	1=1
+    ]]>
+		<include refid="membersearch"/>
+	</select>
+
+	
+	<!-- 회원 목록 보기 (Paging 처리) + 검색조건 -->
+	<select id="memberListPaging" parameterType="com.shopping.manager.dto.SearchCriteria" resultType="com.shopping.member.dto.MemberDTO">
+    <![CDATA[
+        SELECT	*  FROM	member 
+        WHERE	1=1
+    ]]>
+		<include refid="membersearch"/>
+    <![CDATA[
+        ORDER BY userNum DESC
+        LIMIT	#{pageStart}, #{perPageNum}
+    ]]>
+	</select>
+	
+	<!-- 회원번호에 해당하는 정보를 추출한다. -->
+	<select id="memberDetail" parameterType="int" resultType="com.shopping.member.dto.MemberDTO">
+	SELECT	*
+	FROM	member
+	WHERE	userNum		= #{userNum}
+	</select>
+	
+	<!-- 회원 수정 -->
+	<update id="memberUpdate" parameterType="com.shopping.member.dto.MemberDTO">
+    UPDATE 	member
+    SET     userPw      = #{userPw},
+            userName    = #{userName},
+            userPhone   = #{userPhone},
+            userEmail   = #{userEmail},
+            zipcode   	= #{zipcode},
+            userAddr1   = #{userAddr1},
+            userAddr2	= #{userAddr2},
+            userBirth   = #{userBirth}
+    WHERE   userNum     = #{userNum}
+   	</update>
+   	
+   	<!-- 회원 삭제 -->
+	<update id="memberDelete" parameterType="com.shopping.member.dto.MemberDTO">
+    DELETE 	
+   	FROM	member
+    WHERE   userNum     = #{userNum}
+   	</update>
+   
+	<!-- 상품 검색조건 -->
+	<sql id="productsearch">
+		<if test="searchType != null">
+			<if test="searchType == 'class'.toString()">AND productClass LIKE CONCAT('%',#{keyword},'%')</if>
+			<if test="searchType == 'name'.toString()">AND productName LIKE CONCAT('%',#{keyword},'%')</if>
+		</if>
+	</sql>
+	
+    <!-- 전체 상품 수 구하기 (Paging 처리) + 검색조건 -->
+	<select id="productListTotalCount" parameterType="com.shopping.manager.dto.SearchCriteria" resultType="Integer">
+    <![CDATA[
+        SELECT	count(*) FROM	product
+        WHERE	1=1
+    ]]>
+		<include refid="productsearch"/>
+	</select>
+
+	
+	<!-- 상품 목록 보기 (Paging 처리) + 검색조건 -->
+	<select id="productListPaging" parameterType="com.shopping.manager.dto.SearchCriteria" resultType="com.shopping.manager.dto.ManagerDTO">
+    <![CDATA[
+        SELECT	*  FROM	product 
+        WHERE	1=1
+    ]]>
+		<include refid="productsearch"/>
+    <![CDATA[
+        ORDER BY productCode DESC
+        LIMIT	#{pageStart}, #{perPageNum}
+    ]]>
+	</select>
+
+	<!-- 상품등록번호에 해당하는 상품을 추출한다. -->
+	<select id="productDetail" parameterType="int" resultType="com.shopping.manager.dto.ManagerDTO">
+	SELECT	*
+	FROM	product
+	WHERE	productCode		= #{productCode}
+	</select>
+	
+	<!-- 상품 정보를 수정한다. -->
+	<update id="productUpdate" parameterType="com.shopping.manager.dto.ManagerDTO">
+	UPDATE	product
+	SET		productCode		= #{productCode},
+			productClass	=#{productClass},
+			productName		=#{productName},
+			productPrice	=#{productPrice},
+			productCount	=#{productCount},
+			productContent	=#{productContent},
+			discount_rate	=#{discount_rate}
+	WHERE	productCode		= #{productCode}
+	</update>
+	
+	<!-- 상품을 삭제한다. -->
+	<delete id="productDelete" parameterType="int">
+	DELETE
+	FROM	product
+	WHERE	productCode		= #{productCode}
+	</delete>
+	
+	<!-- 배송 상태 -->
+   	<sql id="ordersearch">
+		<if test="searchType != null">
+			<if test="searchType == 'id'.toString()">AND userId LIKE CONCAT('%',#{keyword},'%')</if>
+			<if test="searchType == 'name'.toString()">AND userName LIKE CONCAT('%',#{keyword},'%')</if>
+		</if>
+	</sql>
+	
+    <!-- 전체 회원 수 구하기 (Paging 처리) + 검색조건 -->
+	<select id="orderListTotalCount" parameterType="com.shopping.manager.dto.SearchCriteria" resultType="Integer">
+    <![CDATA[
+        SELECT	count(*) FROM	buy
+        WHERE	1=1
+    ]]>
+		<include refid="ordersearch"/>
+	</select>
+	
+	<!-- 회원 목록 보기 (Paging 처리) + 검색조건 -->
+	<select id="orderListPaging" parameterType="com.shopping.manager.dto.SearchCriteria" resultType="com.shopping.main.dto.BuyDTO">
+    <![CDATA[
+        SELECT	*  FROM	buy 
+        WHERE	1=1
+    ]]>
+		<include refid="ordersearch"/>
+    <![CDATA[
+        ORDER BY buyNum DESC
+        LIMIT	#{pageStart}, #{perPageNum}
+    ]]>
+	</select>
+    
+	<update id="delivery" parameterType="com.shopping.main.dto.BuyDTO">
+    UPDATE  buy
+   	SET 	shipping= #{shipping}
+    WHERE   buyNum= #{buyNum}
+   	</update>
+   	
+   	<!-- 배송 완료 후 상품 수량 삭제 -->
+	<update id = "changeCount">
+         UPDATE product
+         SET productCount = productCount - #{buy_productCount}
+         WHERE productName =#{productName}
+    </update>
+   	
+	<!-- FAQ 종류 목록 보기 -->
+   	<select id="selectFaqType" resultType="com.shopping.manager.dto.FaqTypeDTO" >
+    	SELECT * FROM FaqType
+    </select>
+    
+    <insert id="faqinsert" parameterType="com.shopping.manager.dto.FaqDTO" useGeneratedKeys="true">
+		INSERT INTO faq	( faqClass, title, 	content)	
+		VALUES 				(#{faqClass}, #{title},	#{content})
+	</insert>
+	
+	 <!-- faq 검색조건 -->
+	<sql id="faqsearch">
+		<if test="searchType != null">
+			<if test="searchType == 'title'.toString()">AND title LIKE CONCAT('%',#{keyword},'%')</if>
+			<if test="searchType == 'content'.toString()">AND content LIKE CONCAT('%',#{keyword},'%')</if>
+		</if>
+	</sql>
+	
+    <!-- Faq 수 구하기 (Paging 처리) + 검색조건 -->
+	<select id="faqListTotalCount" parameterType="com.shopping.manager.dto.SearchCriteria" resultType="Integer">
+    <![CDATA[
+        SELECT	count(*) FROM faq
+        WHERE	1=1
+    ]]>
+		<include refid="faqsearch"/>
+	</select>
+	
+	<!-- Faq 목록 보기 (Paging 처리) + 검색조건 -->
+	<select id="faqListPaging" parameterType="com.shopping.manager.dto.SearchCriteria" resultType="com.shopping.manager.dto.FaqDTO">
+    <![CDATA[
+        SELECT	*  FROM	faq 
+        WHERE	1=1
+    ]]>
+		<include refid="faqsearch"/>
+    <![CDATA[
+        ORDER BY bno ASC
+        LIMIT	#{pageStart}, #{perPageNum}
+    ]]>
+	</select>
+	<!-- bno에 해당하는 자료를 추출한다. -->
+	<select id="faqDetail" parameterType="int" resultType="com.shopping.manager.dto.FaqDTO">
+	SELECT	*
+	FROM	faq
+	WHERE	bno		= #{bno}
+	</select>
+	
+	<!-- bno에 해당하는 자료를 삭제한다. -->
+	<delete id="faqDelete" parameterType="int">
+	DELETE
+	FROM	faq
+	WHERE	bno		= #{bno}
+	</delete>
+	
+
+</mapper>	

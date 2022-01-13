@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="com.shopping.main.mappers.CommentMapper">
+
+	<!-- 댓글 등록 -->
+	<insert id="commentInsert" parameterType="com.shopping.main.dto.CommentDTO">
+		INSERT	INTO	COMMENT
+				(CNO,		productCode,	CONTENT,	WRITER,		REG_DATE)
+		VALUES	(#{cno},	#{productCode},	#{content},	#{writer},	NOW() )
+
+	</insert>
+	
+	<!-- 댓글 리스트 -->
+	<select id="commentList" parameterType="int" resultType="com.shopping.main.dto.CommentDTO">
+		SELECT	CNO,		productCode,	CONTENT,	WRITER,		REG_DATE	
+		FROM 	COMMENT
+		WHERE	productCode			= #{productCode}
+	</select>
+	
+	<!-- 댓글 수정 -->
+	<update id="commentUpdate" parameterType="com.shopping.main.dto.CommentDTO">
+		UPDATE	COMMENT
+		SET		CONTENT		= #{content}
+		WHERE	CNO			= #{cno}
+	</update>
+	
+	<!-- 댓글 삭제 -->
+	<delete id="commentDelete" parameterType="int">
+		DELETE	
+		FROM	COMMENT		
+		WHERE	CNO			= #{cno}
+	</delete>
+	
+	<!-- 댓글의 개수를 구한다. -->
+	<select id="commentCount" resultType="int">
+		SELECT	COUNT(*) FROM COMMENT
+	</select>
+
+</mapper>
+
